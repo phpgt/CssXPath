@@ -340,7 +340,7 @@ class Translator {
 	protected function preg_match_collated(
 		string $regex,
 		string $string,
-		callable $transform = null
+		?callable $transform = null
 	):array {
 		preg_match_all(
 			$regex,
