@@ -210,6 +210,21 @@ class TranslatorTest extends TestCase {
 		);
 	}
 
+	public function testSubsequentSibling() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("header ~ div");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(2, $elements->length);
+		self::assertEquals(".//header/following-sibling::div", (string)$translator);
+
+		$detailsOnly = new Translator("header ~ div.details");
+		self::assertEquals(1, $xpath->query($detailsOnly)->length);
+	}
+
 	public function testDescendant() {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_COMPLEX);
@@ -296,7 +311,7 @@ class TranslatorTest extends TestCase {
 			0,
 			$xpath->query($attributeValueCaseSensitive)->length
 		);
-		
+
 		$tagNameCaseInsensitive = new Translator(
 			"dIv"
 		);

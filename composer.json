@@ -27,6 +27,15 @@
 		}
 	},
 
+	"scripts": {
+		"phpunit": "vendor/bin/phpunit --configuration test/phpunit/phpunit.xml",
+		"phpstan": "vendor/bin/phpstan analyse --level 6 src",
+		"test": [
+			"@phpunit",
+			"@phpstan"
+		]
+	},
+
 	"authors": [
 		{
 			"name": "Greg Bowler",
