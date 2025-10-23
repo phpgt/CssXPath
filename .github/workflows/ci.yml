@@ -29,7 +29,7 @@ jobs:
       - name: Upload build archive for test runners
         uses: actions/upload-artifact@v4
         with:
-          name: build-php-${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
   phpunit:
@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-php-${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
       - name: Extract build archive
@@ -59,7 +59,6 @@ jobs:
           version: 9
           php_version: ${{ matrix.php }}
           php_extensions: xdebug
-          configuration: phpunit.xml
           coverage_text: _coverage/coverage.txt
           coverage_clover: _coverage/clover.xml
 
@@ -100,7 +99,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-php-${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
       - name: Extract build archive
