@@ -115,6 +115,40 @@ class TranslatorTest extends TestCase {
 		self::assertEquals('table', $matches->item(1)->nodeValue);
 	}
 
+	public function testLastOfType() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_CHECKBOX);
+
+		$xpath = new DOMXPath($document);
+		$selector = new Translator("form label:last-of-type input");
+
+		$matches = $xpath->query($selector);
+		self::assertEquals(1, $this->count($matches));
+		/** @var \DOMElement $matchingInputElement */
+		$matchingInputElement = $matches->item(0);
+		self::assertEquals(
+			"3",
+			$matchingInputElement->getAttribute("value")
+		);
+	}
+
+	public function testNthOfType() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_CHECKBOX);
+
+		$xpath = new DOMXPath($document);
+		$selector = new Translator("form label:nth-of-type(2) input");
+
+		$matches = $xpath->query($selector);
+		self::assertEquals(1, $this->count($matches));
+		/** @var \DOMElement $matchingInputElement */
+		$matchingInputElement = $matches->item(0);
+		self::assertEquals(
+			"2",
+			$matchingInputElement->getAttribute("value")
+		);
+	}
+
 	public function testFirstNthLastChild() {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML('<div><p>Track & field champions:</p>
@@ -296,7 +330,7 @@ class TranslatorTest extends TestCase {
 			0,
 			$xpath->query($attributeValueCaseSensitive)->length
 		);
-		
+
 		$tagNameCaseInsensitive = new Translator(
 			"dIv"
 		);
