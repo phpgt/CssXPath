@@ -10,8 +10,8 @@
 	"require-dev": {
 		"ext-dom": "*",
 		"ext-libxml": "*",
-		"phpstan/phpstan": "^v1.8",
-		"phpunit/phpunit": "^v9.5"
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit": "^9.6"
 	},
 
 	"license": "MIT",
