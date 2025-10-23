@@ -7,29 +7,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3 ]
+        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/composer-cache
           key: ${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
 
       - name: Composer
-        uses: php-actions/composer@run-as-current-user
+        uses: php-actions/composer@v6
         with:
           php_version: ${{ matrix.php }}
 
       - name: Archive build
-        run: mkdir /tmp/github-actions/ && tar -cvf /tmp/github-actions/build.tar ./
+        run: mkdir /tmp/github-actions/ && tar --exclude=".git" -cvf /tmp/github-actions/build.tar ./
 
       - name: Upload build archive for test runners
         uses: actions/upload-artifact@v4
         with:
-          name: build-php${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
   phpunit:
@@ -37,12 +37,15 @@ jobs:
     needs: [composer]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3 ]
+        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+
+    outputs:
+      coverage: ${{ steps.store-coverage.outputs.coverage_text }}
 
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-php${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
       - name: Extract build archive
@@ -50,24 +53,54 @@ jobs:
 
       - name: PHP Unit tests
         uses: php-actions/phpunit@v3
+        env:
+          XDEBUG_MODE: coverage
         with:
           version: 9
           php_version: ${{ matrix.php }}
           php_extensions: xdebug
-          configuration: test/phpunit/phpunit.xml
-          bootstrap: vendor/autoload.php
+          configuration: phpunit.xml
+          coverage_text: _coverage/coverage.txt
+          coverage_clover: _coverage/clover.xml
+
+      - name: Store coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-${{ matrix.php }}-${{ github.run_number }}
+          path: _coverage
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: [ phpunit ]
+    strategy:
+      matrix:
+        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-${{ matrix.php }}-${{ github.run_number }}
+          path: _coverage
+
+      - name: Output coverage
+        run: cat "_coverage/coverage.txt"
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          slug: phpgt/CssXPath
 
   phpstan:
     runs-on: ubuntu-latest
     needs: [composer]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3 ]
+        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
 
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: build-php${{ matrix.php }}
+          name: build-artifact-${{ matrix.php }}
           path: /tmp/github-actions
 
       - name: Extract build archive
@@ -82,14 +115,17 @@ jobs:
   remove_old_artifacts:
     runs-on: ubuntu-latest
 
+    permissions:
+      actions: write
+
     steps:
       - name: Remove old artifacts for prior workflow runs on this repository
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "/repos/${{ github.repository }}/actions/artifacts" | jq ".artifacts[] | .id" > artifact-id-list.txt
+          gh api "/repos/${{ github.repository }}/actions/artifacts" | jq ".artifacts[] | select(.name | startswith(\"build-artifact\")) | .id" > artifact-id-list.txt
           while read id
           do
             echo -n "Deleting artifact ID $id ... "
-            gh api --method DELETE /repos/${{ github.repository }}/actions/artifacts/$id && echo "Done" || true
+            gh api --method DELETE /repos/${{ github.repository }}/actions/artifacts/$id && echo "Done"
           done <artifact-id-list.txt
