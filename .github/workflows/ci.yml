@@ -53,6 +53,8 @@ jobs:
 
       - name: PHP Unit tests
         uses: php-actions/phpunit@v3
+        env:
+          XDEBUG_MODE: cover
         with:
           version: 9
           php_version: ${{ matrix.php }}
