@@ -59,6 +59,7 @@ jobs:
           version: 9
           php_version: ${{ matrix.php }}
           php_extensions: xdebug
+          configuration: phpunit.xml
           coverage_text: _coverage/coverage.txt
           coverage_clover: _coverage/clover.xml
 
