@@ -221,7 +221,7 @@ class TranslatorTest extends TestCase {
 		self::assertEquals(2, $elements->length);
 		self::assertEquals(".//main//header/following-sibling::div", (string)$translator);
 
-		$detailsOnly = new Translator("header ~ div.details");
+		$detailsOnly = new Translator("main header ~ div.details");
 		self::assertEquals(1, $xpath->query($detailsOnly)->length);
 	}
 
