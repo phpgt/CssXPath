@@ -87,6 +87,9 @@ jobs:
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: PhpGt/CssXPath
 
   phpstan:
     runs-on: ubuntu-latest
