@@ -1,27 +1,30 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   composer:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/composer-cache
           key: ${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
 
-      - name: Composer
+      - name: Composer install
         uses: php-actions/composer@v6
         with:
           php_version: ${{ matrix.php }}
+          php_extensions: pcntl
 
       - name: Archive build
         run: mkdir /tmp/github-actions/ && tar --exclude=".git" -cvf /tmp/github-actions/build.tar ./
@@ -34,10 +37,10 @@ jobs:
 
   phpunit:
     runs-on: ubuntu-latest
-    needs: [composer]
+    needs: [ composer ]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
 
     outputs:
       coverage: ${{ steps.store-coverage.outputs.coverage_text }}
@@ -52,14 +55,12 @@ jobs:
         run: tar -xvf /tmp/github-actions/build.tar ./
 
       - name: PHP Unit tests
-        uses: php-actions/phpunit@v3
+        uses: php-actions/phpunit@v4
         env:
-          XDEBUG_MODE: coverage
+          XDEBUG_MODE: cover
         with:
-          version: 9
           php_version: ${{ matrix.php }}
           php_extensions: xdebug
-          configuration: phpunit.xml
           coverage_text: _coverage/coverage.txt
           coverage_clover: _coverage/clover.xml
 
@@ -74,9 +75,11 @@ jobs:
     needs: [ phpunit ]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: code-coverage-${{ matrix.php }}-${{ github.run_number }}
@@ -89,14 +92,13 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: PhpGt/CssXPath
 
   phpstan:
     runs-on: ubuntu-latest
-    needs: [composer]
+    needs: [ composer ]
     strategy:
       matrix:
-        php: [ 8.0, 8.1, 8.2, 8.3, 8.4 ]
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
 
     steps:
       - uses: actions/download-artifact@v4
@@ -110,8 +112,57 @@ jobs:
       - name: PHP Static Analysis
         uses: php-actions/phpstan@v3
         with:
-          path: src/
           php_version: ${{ matrix.php }}
+          path: src/
+          level: 6
+          memory_limit: 256M
+
+  phpmd:
+    runs-on: ubuntu-latest
+    needs: [ composer ]
+    strategy:
+      matrix:
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-${{ matrix.php }}
+          path: /tmp/github-actions
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/github-actions/build.tar ./
+
+      - name: PHP Mess Detector
+        uses: php-actions/phpmd@v1
+        with:
+          php_version: ${{ matrix.php }}
+          path: src/
+          output: text
+          ruleset: phpmd.xml
+
+  phpcs:
+    runs-on: ubuntu-latest
+    needs: [ composer ]
+    strategy:
+      matrix:
+        php: [ 8.2, 8.3, 8.4, 8.5 ]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-${{ matrix.php }}
+          path: /tmp/github-actions
+
+      - name: Extract build archive
+        run: tar -xvf /tmp/github-actions/build.tar ./
+
+      - name: PHP Code Sniffer
+        uses: php-actions/phpcs@v1
+        with:
+          php_version: ${{ matrix.php }}
+          path: src/
+          standard: phpcs.xml
 
   remove_old_artifacts:
     runs-on: ubuntu-latest
