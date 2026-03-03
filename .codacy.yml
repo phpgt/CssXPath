@@ -1,0 +1,5 @@
+analysis:
+  exclude_paths:
+    - "example/**"
+    - "test/**"
+
