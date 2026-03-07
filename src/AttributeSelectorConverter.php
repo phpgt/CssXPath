@@ -27,9 +27,28 @@ class AttributeSelectorConverter {
 
 		$valueString = trim((string)$detailValue["content"], " '\"");
 		$equalsType = $detailType["content"];
-		$expression->appendFragment(
-			$this->buildExpression($attribute, $valueString, $equalsType)
-		);
+		$condition = $this->buildCondition($attribute, $valueString, $equalsType);
+		$expression->appendFragment("[{$condition}]");
+	}
+
+	/** @param array<string, mixed> $token */
+	public function buildConditionFromToken(array $token, bool $htmlMode):string {
+		$attribute = (string)$token["content"];
+		if($htmlMode) {
+			$attribute = strtolower($attribute);
+		}
+
+		$detail = $token["detail"] ?? null;
+		$detailType = $detail[0] ?? null;
+		$detailValue = $detail[1] ?? null;
+
+		if(!$this->hasEqualsType($detailType)) {
+			return "@{$attribute}";
+		}
+
+		$valueString = trim((string)$detailValue["content"], " '\"");
+		$equalsType = $detailType["content"];
+		return $this->buildCondition($attribute, $valueString, $equalsType);
 	}
 
 	/** @param array<string, mixed>|null $detailType */
@@ -38,32 +57,32 @@ class AttributeSelectorConverter {
 			&& $detailType["type"] === "attribute_equals";
 	}
 
-	private function buildExpression(
+	private function buildCondition(
 		string $attribute,
 		string $value,
 		string $equalsType
 	):string {
 		return match($equalsType) {
-			Translator::EQUALS_EXACT => "[@{$attribute}=\"{$value}\"]",
-			Translator::EQUALS_CONTAINS => "[contains(@{$attribute},\"{$value}\")]",
-			Translator::EQUALS_CONTAINS_WORD => "["
+			Translator::EQUALS_EXACT => "@{$attribute}=\"{$value}\"",
+			Translator::EQUALS_CONTAINS => "contains(@{$attribute},\"{$value}\")",
+			Translator::EQUALS_CONTAINS_WORD => ""
 				. "contains(concat(\" \",@{$attribute},\" \"),"
 				. "concat(\" \",\"{$value}\",\" \"))"
-				. "]",
-			Translator::EQUALS_OR_STARTS_WITH_HYPHENATED => "["
+				. "",
+			Translator::EQUALS_OR_STARTS_WITH_HYPHENATED => ""
 				. "@{$attribute}=\"{$value}\" or "
 				. "starts-with(@{$attribute}, \"{$value}-\")"
-				. "]",
-			Translator::EQUALS_STARTS_WITH => "["
+				. "",
+			Translator::EQUALS_STARTS_WITH => ""
 				. "starts-with(@{$attribute}, \"{$value}\")"
-				. "]",
-			Translator::EQUALS_ENDS_WITH => "["
+				. "",
+			Translator::EQUALS_ENDS_WITH => ""
 				. "substring(@{$attribute},"
 				. "string-length(@{$attribute}) - "
 				. "string-length(\"{$value}\") + 1)"
 				. "=\"{$value}\""
-				. "]",
-			default => "[@{$attribute}]",
+				. "",
+			default => "@{$attribute}",
 		};
 	}
 }

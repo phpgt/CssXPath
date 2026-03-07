@@ -5,6 +5,14 @@ namespace Gt\CssXPath;
 class PseudoSelectorConverter {
 	/** @var array<int, string> */
 	private const BOOLEAN_ATTRIBUTES = ["disabled", "checked", "selected"];
+	private NotSelectorConditionBuilder $notSelectorConditionBuilder;
+
+	public function __construct(
+		?NotSelectorConditionBuilder $notSelectorConditionBuilder = null,
+	) {
+		$this->notSelectorConditionBuilder = $notSelectorConditionBuilder
+			?? new NotSelectorConditionBuilder();
+	}
 
 	/**
 	 * @param array<string, mixed> $token
@@ -13,7 +21,8 @@ class PseudoSelectorConverter {
 	public function apply(
 		array $token,
 		?array $next,
-		XPathExpression $expression
+		XPathExpression $expression,
+		bool $htmlMode
 	):void {
 		$pseudo = $token["content"];
 		$specifier = $this->extractSpecifier($next);
@@ -26,6 +35,7 @@ class PseudoSelectorConverter {
 		$handlers = [
 			"text" => fn() => $this->applyText($expression),
 			"contains" => fn() => $this->applyContains($expression, $specifier),
+			"not" => fn() => $this->applyNot($expression, $specifier, $htmlMode),
 			"first-child" => fn() => $expression->prependToLast("*[1]/self::"),
 			"nth-child" => fn() => $this->applyNthChild($expression, $specifier),
 			"last-child" => fn() => $expression->prependToLast("*[last()]/self::"),
@@ -81,6 +91,21 @@ class PseudoSelectorConverter {
 		}
 
 		$expression->appendFragment("[{$specifier}]");
+	}
+
+	private function applyNot(
+		XPathExpression $expression,
+		string $specifier,
+		bool $htmlMode
+	):void {
+		$combinedCondition = $this->notSelectorConditionBuilder
+			->build($specifier, $htmlMode);
+		if($combinedCondition === null) {
+			return;
+		}
+
+		$expression->ensureElement();
+		$expression->appendFragment("[not({$combinedCondition})]");
 	}
 
 	/** @param array<string, mixed>|null $next */

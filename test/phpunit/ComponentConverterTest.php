@@ -52,14 +52,16 @@ class ComponentConverterTest extends TestCase {
 		$converter->apply(
 			["type" => "pseudo", "content" => "contains"],
 			null,
-			$expression
+			$expression,
+			true
 		);
 		self::assertSame(".//p", $expression->toString());
 
 		$converter->apply(
 			["type" => "pseudo", "content" => "contains"],
 			["type" => "pseudospecifier", "content" => "'Example'"],
-			$expression
+			$expression,
+			true
 		);
 		self::assertSame(".//p[contains(text(),'Example')]", $expression->toString());
 	}
@@ -73,7 +75,8 @@ class ComponentConverterTest extends TestCase {
 		$converter->apply(
 			["type" => "pseudo", "content" => "nth-child"],
 			["type" => "pseudospecifier", "content" => "2"],
-			$expression
+			$expression,
+			true
 		);
 
 		self::assertSame(
@@ -123,6 +126,57 @@ class ComponentConverterTest extends TestCase {
 			".//*[@lang=\"en\" or starts-with(@lang, \"en-\")]",
 			$expression->toString()
 		);
+	}
+
+	public function testPseudoSelectorConverterNotBuildsElementAndClassCondition():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("li", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "not"],
+			["type" => "pseudospecifier", "content" => ".selected"],
+			$expression,
+			true
+		);
+
+		self::assertSame(
+			".//li[not(contains(concat(' ',normalize-space(@class),' '),' selected '))]",
+			$expression->toString()
+		);
+	}
+
+	public function testPseudoSelectorConverterNotSupportsSelectorLists():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("li", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "not"],
+			["type" => "pseudospecifier", "content" => ".selected, [data-state='hidden']"],
+			$expression,
+			true
+		);
+
+		self::assertSame(
+			".//li[not((contains(concat(' ',normalize-space(@class),' '),' selected ') or @data-state=\"hidden\"))]",
+			$expression->toString()
+		);
+	}
+
+	public function testPseudoSelectorConverterNotIgnoresUnsupportedComplexSelector():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("li", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "not"],
+			["type" => "pseudospecifier", "content" => "div span"],
+			$expression,
+			true
+		);
+
+		self::assertSame(".//li", $expression->toString());
 	}
 
 	public function testSingleSelectorConverterHandlesWildcardClassAndIdSelectors():void {

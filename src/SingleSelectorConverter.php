@@ -3,13 +3,20 @@
 namespace Gt\CssXPath;
 
 class SingleSelectorConverter {
+	private ThreadMatcher $threadMatcher;
+	private PseudoSelectorConverter $pseudoSelectorConverter;
+	private AttributeSelectorConverter $attributeSelectorConverter;
+
 	public function __construct(
-		private readonly ThreadMatcher $threadMatcher = new ThreadMatcher(),
-		private readonly PseudoSelectorConverter $pseudoSelectorConverter
-			= new PseudoSelectorConverter(),
-		private readonly AttributeSelectorConverter $attributeSelectorConverter
-			= new AttributeSelectorConverter(),
+		?ThreadMatcher $threadMatcher = null,
+		?PseudoSelectorConverter $pseudoSelectorConverter = null,
+		?AttributeSelectorConverter $attributeSelectorConverter = null,
 	) {
+		$this->threadMatcher = $threadMatcher ?? new ThreadMatcher();
+		$this->pseudoSelectorConverter = $pseudoSelectorConverter
+			?? new PseudoSelectorConverter();
+		$this->attributeSelectorConverter = $attributeSelectorConverter
+			?? new AttributeSelectorConverter();
 	}
 
 	public function convert(
@@ -18,7 +25,9 @@ class SingleSelectorConverter {
 		bool $htmlMode
 	):string {
 		$thread = array_values(
-			$this->threadMatcher->collate(Translator::CSS_REGEX, $css)
+			array_filter(
+				$this->threadMatcher->collate(Translator::CSS_REGEX, $css)
+			)
 		);
 		$expression = new XPathExpression($prefix);
 
@@ -46,7 +55,7 @@ class SingleSelectorConverter {
 			"element" => fn() => $expression
 				->appendElement((string)$token["content"], $htmlMode),
 			"pseudo" => fn() => $this->pseudoSelectorConverter
-				->apply($token, $next, $expression),
+				->apply($token, $next, $expression, $htmlMode),
 			"child" => fn() => $this->appendAxis($expression, "/"),
 			"id" => fn() => $this->appendId($expression, (string)$token["content"]),
 			"class" => fn() => $this
