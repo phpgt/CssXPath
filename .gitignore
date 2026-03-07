@@ -3,3 +3,5 @@
 /test/unit/_coverage
 /composer.phar
 .phpunit.*
+# Local wiki symlink
+docs

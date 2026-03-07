@@ -1,0 +1,6 @@
+analysis:
+  exclude_paths:
+    - ".github/**"
+    - "example/**"
+    - "test/**"
+
