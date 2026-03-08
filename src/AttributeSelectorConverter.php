@@ -34,15 +34,23 @@ class AttributeSelectorConverter {
 
 	/** @param array<string, mixed> $token */
 	public function buildConditionFromToken(array $token, bool $htmlMode):string {
-		$attribute = (string)$token["content"];
-		if($htmlMode) {
-			$attribute = strtolower($attribute);
-		}
+		$parts = $this->extractTokenParts($token, $htmlMode);
+		return $this->buildConditionFromParts(
+			$parts["attribute"],
+			$parts["detailType"],
+			$parts["detailValue"],
+		);
+	}
 
-		$detail = $token["detail"] ?? null;
-		$detailType = $detail[0] ?? null;
-		$detailValue = $detail[1] ?? null;
-
+	/**
+	 * @param array<string, mixed>|null $detailType
+	 * @param array<string, mixed>|null $detailValue
+	 */
+	private function buildConditionFromParts(
+		string $attribute,
+		?array $detailType,
+		?array $detailValue,
+	):string {
 		if(!$this->hasEqualsType($detailType)) {
 			return "@{$attribute}";
 		}
@@ -50,6 +58,28 @@ class AttributeSelectorConverter {
 		$valueString = trim((string)$detailValue["content"], " '\"");
 		$equalsType = $detailType["content"];
 		return $this->buildCondition($attribute, $valueString, $equalsType);
+	}
+
+	/**
+	 * @param array<string, mixed> $token
+	 * @return array{
+	 *   attribute: string,
+	 *   detailType: array<string, mixed>|null,
+	 *   detailValue: array<string, mixed>|null
+	 * }
+	 */
+	private function extractTokenParts(array $token, bool $htmlMode):array {
+		$attribute = (string)$token["content"];
+		if($htmlMode) {
+			$attribute = strtolower($attribute);
+		}
+
+		$detail = $token["detail"] ?? null;
+		return [
+			"attribute" => $attribute,
+			"detailType" => $detail[0] ?? null,
+			"detailValue" => $detail[1] ?? null,
+		];
 	}
 
 	/** @param array<string, mixed>|null $detailType */
