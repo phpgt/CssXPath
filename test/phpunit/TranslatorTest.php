@@ -622,6 +622,65 @@ class TranslatorTest extends TestCase {
 		self::assertEquals("input", $checkedEl->tagName);
 	}
 
+	public function testNotPseudoSelectorWithClass() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("nav li:not(.selected)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(3, $elements->length);
+	}
+
+	public function testNotPseudoSelectorWithElementAndAttribute() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$notArticle = new Translator("main > :not(article)");
+		self::assertEquals(1, $xpath->query($notArticle)->length);
+
+		$nonEmailInputs = new Translator("input:not([name='email'])");
+		self::assertEquals(3, $xpath->query($nonEmailInputs)->length);
+	}
+
+	public function testNotPseudoSelectorWithPseudoArgument() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("input:not(:checked)");
+		self::assertEquals(3, $xpath->query($translator)->length);
+	}
+
+	public function testNotPseudoSelectorSupportsSelectorLists() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("nav li:not(.selected, :first-child)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(2, $elements->length);
+		self::assertEquals("About", trim($elements->item(0)->nodeValue));
+		self::assertEquals("Contact", trim($elements->item(1)->nodeValue));
+	}
+
+	public function testNotPseudoSelectorWithEmptySpecifierIsIgnored() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$allInputs = new Translator("input");
+		$notEmpty = new Translator("input:not()");
+
+		self::assertEquals(
+			$xpath->query($allInputs)->length,
+			$xpath->query($notEmpty)->length
+		);
+	}
+
 	public function testCommaSeparatedSelectors() {
 // Multiple XPath selectors are separated by a pipe (|), so the CSS selector
 // `div, form` should translate to descendant-or-self::div | descendant-or-self::form`

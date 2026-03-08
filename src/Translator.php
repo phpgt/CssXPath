@@ -7,7 +7,7 @@ class Translator {
 		'/'
 		. '(?P<star>\*)'
 		. '|(:(?P<pseudo>[\w-]*))'
-		. '|\(*(?P<pseudospecifier>["\']*[\w\h-]*["\']*)\)'
+		. '|\((?P<pseudospecifier>[^)]*)\)'
 		. '|(?P<element>[\w-]*)'
 		. '|(?P<child>\s*>\s*)'
 		. '|(#(?P<id>[\w-]*))'
@@ -27,15 +27,19 @@ class Translator {
 	public const EQUALS_STARTS_WITH = "^=";
 
 	private SingleSelectorConverter $singleSelectorConverter;
+	private SelectorListSplitter $selectorListSplitter;
 
 	public function __construct(
 		protected string $cssSelector,
 		protected string $prefix = ".//",
 		protected bool $htmlMode = true,
 		?SingleSelectorConverter $singleSelectorConverter = null,
+		?SelectorListSplitter $selectorListSplitter = null,
 	) {
 		$this->singleSelectorConverter = $singleSelectorConverter
 			?? new SingleSelectorConverter();
+		$this->selectorListSplitter = $selectorListSplitter
+			?? new SelectorListSplitter();
 	}
 
 	public function __toString():string {
@@ -49,10 +53,7 @@ class Translator {
 	// phpcs:enable
 
 	protected function convert(string $css):string {
-		$cssArray = preg_split(
-			'/("|\').*?\1(*SKIP)(*F)|,/',
-			$css
-		);
+		$cssArray = $this->selectorListSplitter->split($css);
 		$xPathArray = [];
 
 		foreach($cssArray as $input) {

@@ -5,6 +5,18 @@ namespace Gt\CssXPath;
 class PseudoSelectorConverter {
 	/** @var array<int, string> */
 	private const BOOLEAN_ATTRIBUTES = ["disabled", "checked", "selected"];
+	private SelectorListSplitter $selectorListSplitter;
+	private NotSelectorConditionBuilder $notSelectorConditionBuilder;
+
+	public function __construct(
+		?SelectorListSplitter $selectorListSplitter = null,
+		?NotSelectorConditionBuilder $notSelectorConditionBuilder = null,
+	) {
+		$this->selectorListSplitter = $selectorListSplitter
+			?? new SelectorListSplitter();
+		$this->notSelectorConditionBuilder = $notSelectorConditionBuilder
+			?? new NotSelectorConditionBuilder();
+	}
 
 	/**
 	 * @param array<string, mixed> $token
@@ -13,7 +25,8 @@ class PseudoSelectorConverter {
 	public function apply(
 		array $token,
 		?array $next,
-		XPathExpression $expression
+		XPathExpression $expression,
+		bool $htmlMode
 	):void {
 		$pseudo = $token["content"];
 		$specifier = $this->extractSpecifier($next);
@@ -26,6 +39,7 @@ class PseudoSelectorConverter {
 		$handlers = [
 			"text" => fn() => $this->applyText($expression),
 			"contains" => fn() => $this->applyContains($expression, $specifier),
+			"not" => fn() => $this->applyNot($expression, $specifier, $htmlMode),
 			"first-child" => fn() => $expression->prependToLast("*[1]/self::"),
 			"nth-child" => fn() => $this->applyNthChild($expression, $specifier),
 			"last-child" => fn() => $expression->prependToLast("*[last()]/self::"),
@@ -81,6 +95,34 @@ class PseudoSelectorConverter {
 		}
 
 		$expression->appendFragment("[{$specifier}]");
+	}
+
+	private function applyNot(
+		XPathExpression $expression,
+		string $specifier,
+		bool $htmlMode
+	):void {
+		$selectorList = $this->selectorListSplitter->split($specifier);
+		if(empty($selectorList)) {
+			return;
+		}
+
+		$conditions = [];
+		foreach($selectorList as $selector) {
+			$condition = $this->notSelectorConditionBuilder
+				->build($selector, $htmlMode);
+			if($condition === null) {
+				return;
+			}
+
+			$conditions[] = $condition;
+		}
+
+		$combined = count($conditions) === 1
+			? $conditions[0]
+			: "(" . implode(" or ", $conditions) . ")";
+		$expression->ensureElement();
+		$expression->appendFragment("[not({$combined})]");
 	}
 
 	/** @param array<string, mixed>|null $next */

@@ -1,6 +1,5 @@
-analysis:
-  exclude_paths:
-    - ".github/**"
-    - "example/**"
-    - "test/**"
+exclude_paths:
+  - ".github/**"
+  - "example/**"
+  - "test/**"
 
