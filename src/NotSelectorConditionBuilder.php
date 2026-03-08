@@ -66,21 +66,46 @@ class NotSelectorConditionBuilder {
 		?array $next,
 		bool $htmlMode
 	):?string {
-		return match($token["type"]) {
-			"element", "star" => $this->buildElementCondition(
+		$type = (string)$token["type"];
+		if($this->isElementType($type)) {
+			return $this->buildElementCondition(
 				(string)$token["content"],
 				$htmlMode
-			),
+			);
+		}
+
+		return $this->buildNonElementCondition($type, $token, $next, $htmlMode);
+	}
+
+	private function isElementType(string $type):bool {
+		return in_array($type, ["element", "star"], true);
+	}
+
+	/**
+	 * @param array<string, mixed> $token
+	 * @param array<string, mixed>|null $next
+	 */
+	private function buildNonElementCondition(
+		string $type,
+		array $token,
+		?array $next,
+		bool $htmlMode
+	):?string {
+		return match($type) {
 			"id" => "@id='" . $token["content"] . "'",
-			"class" => ""
-				. "contains(concat(' ',normalize-space(@class),' '),"
-				. "' " . $token["content"] . " ')",
+			"class" => $this->buildClassCondition((string)$token["content"]),
 			"attribute" => $this
 				->attributeSelectorConverter
 				->buildConditionFromToken($token, $htmlMode),
 			"pseudo" => $this->buildPseudoCondition($token, $next),
 			default => null,
 		};
+	}
+
+	private function buildClassCondition(string $className):string {
+		return ""
+			. "contains(concat(' ',normalize-space(@class),' '),"
+			. "' {$className} ')";
 	}
 
 	/**
