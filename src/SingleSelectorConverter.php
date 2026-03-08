@@ -3,13 +3,20 @@
 namespace Gt\CssXPath;
 
 class SingleSelectorConverter {
+	private ThreadMatcher $threadMatcher;
+	private PseudoSelectorConverter $pseudoSelectorConverter;
+	private AttributeSelectorConverter $attributeSelectorConverter;
+
 	public function __construct(
-		private readonly ThreadMatcher $threadMatcher = new ThreadMatcher(),
-		private readonly PseudoSelectorConverter $pseudoSelectorConverter
-			= new PseudoSelectorConverter(),
-		private readonly AttributeSelectorConverter $attributeSelectorConverter
-			= new AttributeSelectorConverter(),
+		?ThreadMatcher $threadMatcher = null,
+		?PseudoSelectorConverter $pseudoSelectorConverter = null,
+		?AttributeSelectorConverter $attributeSelectorConverter = null,
 	) {
+		$this->threadMatcher = $threadMatcher ?? new ThreadMatcher();
+		$this->pseudoSelectorConverter = $pseudoSelectorConverter
+			?? new PseudoSelectorConverter();
+		$this->attributeSelectorConverter = $attributeSelectorConverter
+			?? new AttributeSelectorConverter();
 	}
 
 	public function convert(

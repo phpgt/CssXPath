@@ -5,13 +5,17 @@ namespace Gt\CssXPath;
 class PseudoSelectorConverter {
 	/** @var array<int, string> */
 	private const BOOLEAN_ATTRIBUTES = ["disabled", "checked", "selected"];
+	private SelectorListSplitter $selectorListSplitter;
+	private NotSelectorConditionBuilder $notSelectorConditionBuilder;
 
 	public function __construct(
-		private readonly SelectorListSplitter $selectorListSplitter
-			= new SelectorListSplitter(),
-		private readonly NotSelectorConditionBuilder $notSelectorConditionBuilder
-			= new NotSelectorConditionBuilder(),
+		?SelectorListSplitter $selectorListSplitter = null,
+		?NotSelectorConditionBuilder $notSelectorConditionBuilder = null,
 	) {
+		$this->selectorListSplitter = $selectorListSplitter
+			?? new SelectorListSplitter();
+		$this->notSelectorConditionBuilder = $notSelectorConditionBuilder
+			?? new NotSelectorConditionBuilder();
 	}
 
 	/**
