@@ -3,20 +3,13 @@
 namespace Gt\CssXPath;
 
 class SingleSelectorConverter {
-	private ThreadMatcher $threadMatcher;
-	private PseudoSelectorConverter $pseudoSelectorConverter;
-	private AttributeSelectorConverter $attributeSelectorConverter;
-
 	public function __construct(
-		?ThreadMatcher $threadMatcher = null,
-		?PseudoSelectorConverter $pseudoSelectorConverter = null,
-		?AttributeSelectorConverter $attributeSelectorConverter = null,
+		private readonly ThreadMatcher $threadMatcher = new ThreadMatcher(),
+		private readonly PseudoSelectorConverter $pseudoSelectorConverter
+			= new PseudoSelectorConverter(),
+		private readonly AttributeSelectorConverter $attributeSelectorConverter
+			= new AttributeSelectorConverter(),
 	) {
-		$this->threadMatcher = $threadMatcher ?? new ThreadMatcher();
-		$this->pseudoSelectorConverter = $pseudoSelectorConverter
-			?? new PseudoSelectorConverter();
-		$this->attributeSelectorConverter = $attributeSelectorConverter
-			?? new AttributeSelectorConverter();
 	}
 
 	public function convert(
@@ -52,11 +45,11 @@ class SingleSelectorConverter {
 		$handlers = [
 			"star" => fn() => $expression
 				->appendElement((string)$token["content"], $htmlMode),
-			"element" => fn() => $expression
-				->appendElement((string)$token["content"], $htmlMode),
-			"pseudo" => fn() => $this->pseudoSelectorConverter
-				->apply($token, $next, $expression, $htmlMode),
-			"child" => fn() => $this->appendAxis($expression, "/"),
+				"element" => fn() => $expression
+					->appendElement((string)$token["content"], $htmlMode),
+				"pseudo" => fn() => $this->pseudoSelectorConverter
+					->apply($token, $next, $expression, $htmlMode),
+				"child" => fn() => $this->appendAxis($expression, "/"),
 			"id" => fn() => $this->appendId($expression, (string)$token["content"]),
 			"class" => fn() => $this
 				->appendClass($expression, (string)$token["content"]),

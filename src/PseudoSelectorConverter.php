@@ -5,13 +5,13 @@ namespace Gt\CssXPath;
 class PseudoSelectorConverter {
 	/** @var array<int, string> */
 	private const BOOLEAN_ATTRIBUTES = ["disabled", "checked", "selected"];
-	private NotSelectorConditionBuilder $notSelectorConditionBuilder;
 
 	public function __construct(
-		?NotSelectorConditionBuilder $notSelectorConditionBuilder = null,
+		private readonly SelectorListSplitter $selectorListSplitter
+			= new SelectorListSplitter(),
+		private readonly NotSelectorConditionBuilder $notSelectorConditionBuilder
+			= new NotSelectorConditionBuilder(),
 	) {
-		$this->notSelectorConditionBuilder = $notSelectorConditionBuilder
-			?? new NotSelectorConditionBuilder();
 	}
 
 	/**
@@ -98,14 +98,27 @@ class PseudoSelectorConverter {
 		string $specifier,
 		bool $htmlMode
 	):void {
-		$combinedCondition = $this->notSelectorConditionBuilder
-			->build($specifier, $htmlMode);
-		if($combinedCondition === null) {
+		$selectorList = $this->selectorListSplitter->split($specifier);
+		if(empty($selectorList)) {
 			return;
 		}
 
+		$conditions = [];
+		foreach($selectorList as $selector) {
+			$condition = $this->notSelectorConditionBuilder
+				->build($selector, $htmlMode);
+			if($condition === null) {
+				return;
+			}
+
+			$conditions[] = $condition;
+		}
+
+		$combined = count($conditions) === 1
+			? $conditions[0]
+			: "(" . implode(" or ", $conditions) . ")";
 		$expression->ensureElement();
-		$expression->appendFragment("[not({$combinedCondition})]");
+		$expression->appendFragment("[not({$combined})]");
 	}
 
 	/** @param array<string, mixed>|null $next */

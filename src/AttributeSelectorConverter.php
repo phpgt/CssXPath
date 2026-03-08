@@ -27,8 +27,9 @@ class AttributeSelectorConverter {
 
 		$valueString = trim((string)$detailValue["content"], " '\"");
 		$equalsType = $detailType["content"];
-		$condition = $this->buildCondition($attribute, $valueString, $equalsType);
-		$expression->appendFragment("[{$condition}]");
+		$expression->appendFragment(
+			$this->buildExpression($attribute, $valueString, $equalsType)
+		);
 	}
 
 	/** @param array<string, mixed> $token */
@@ -76,7 +77,7 @@ class AttributeSelectorConverter {
 			Translator::EQUALS_STARTS_WITH => ""
 				. "starts-with(@{$attribute}, \"{$value}\")"
 				. "",
-			Translator::EQUALS_ENDS_WITH => ""
+				Translator::EQUALS_ENDS_WITH => ""
 				. "substring(@{$attribute},"
 				. "string-length(@{$attribute}) - "
 				. "string-length(\"{$value}\") + 1)"
@@ -84,5 +85,13 @@ class AttributeSelectorConverter {
 				. "",
 			default => "@{$attribute}",
 		};
+	}
+
+	private function buildExpression(
+		string $attribute,
+		string $value,
+		string $equalsType
+	):string {
+		return "[" . $this->buildCondition($attribute, $value, $equalsType) . "]";
 	}
 }
