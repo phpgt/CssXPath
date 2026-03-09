@@ -178,6 +178,55 @@ class ComponentConverterTest extends TestCase {
 
 		self::assertSame(".//li", $expression->toString());
 	}
+
+	public function testPseudoSelectorConverterHasBuildsDescendantCondition():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "h1"],
+			$expression,
+			true
+		);
+
+		self::assertSame(".//section[.//h1]", $expression->toString());
+	}
+
+	public function testPseudoSelectorConverterHasBuildsChildCondition():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "> h1"],
+			$expression,
+			true
+		);
+
+		self::assertSame(".//section[./h1]", $expression->toString());
+	}
+
+	public function testPseudoSelectorConverterHasCombinesSelectorListWithOr():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "h1, h2"],
+			$expression,
+			true
+		);
+
+		self::assertSame(
+			".//section[(.//h1) or (.//h2)]",
+			$expression->toString()
+		);
+	}
+
 	public function testSingleSelectorConverterHandlesWildcardClassAndIdSelectors():void {
 		$converter = new SingleSelectorConverter();
 
