@@ -5,6 +5,7 @@ namespace Gt\CssXPath\Test;
 use DOMDocument;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
+use Gt\CssXPath\NotYetImplementedException;
 use Gt\CssXPath\Test\Helper\Helper;
 use Gt\CssXPath\Translator;
 
@@ -81,17 +82,7 @@ class TranslatorTest extends TestCase {
 
 	public function testFirstOfTypeNthOfTypeLastOfType() {
 		$document = new DOMDocument("1.0", "UTF-8");
-		$document->loadHTML('<dl>
-			<dt>gigogne</dt>
-			<dd>
-			<dl>
-				<dt>fusee</dt>
-				<dd>multistage rocket</dd>
-				<dt>table</dt>
-				<dd>nest of tables</dd>
-			</dl>
-			</dd>
-		</dl>');
+		$document->loadHTML(Helper::HTML_DEFINITION_LIST);
 
 		$xpath = new DOMXPath($document);
 		$selector = new Translator('dl dt:first-of-type');
@@ -151,17 +142,7 @@ class TranslatorTest extends TestCase {
 
 	public function testFirstNthLastChild() {
 		$document = new DOMDocument("1.0", "UTF-8");
-		$document->loadHTML('<div><p>Track & field champions:</p>
-		<ul>
-		  <li>Adhemar da Silva</li>
-		  <li>Wang Junxia</li>
-		  <li>Wilma Rudolph</li>
-		  <li>Babe Didrikson-Zaharias</li>
-		  <li>Betty Cuthbert</li>
-		  <li>Fanny Blankers-Koen</li>
-		  <li>Florence Griffith-Joyner</li>
-		</ul></div>
-		 ');
+		$document->loadHTML(Helper::HTML_ATHLETE_LIST);
 		$xpath = new DOMXPath($document);
 
 		$firstChild = new Translator("li:first-child");
@@ -679,6 +660,145 @@ class TranslatorTest extends TestCase {
 			$xpath->query($allInputs)->length,
 			$xpath->query($notEmpty)->length
 		);
+	}
+
+	public function testHasPseudoSelectorWithDescendantRelativeSelector() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("label:has(input[name='email'])");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertStringContainsString(
+			"Your email address",
+			$elements->item(0)->textContent
+		);
+	}
+
+	public function testHasPseudoSelectorWithChildRelativeSelector() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_CHILD_SECTION);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("section:has(> h2)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertEquals("direct", $elements->item(0)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorWithAdjacentSiblingRelativeSelector() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_ADJACENT_SIBLING);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("h1:has(+ p)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertEquals("pass", $elements->item(0)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorWithGeneralSiblingRelativeSelector() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_GENERAL_SIBLING);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("h2:has(~ p.warning)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertEquals("pass", $elements->item(0)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorSupportsSelectorLists() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_SELECTOR_LIST);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("section:has(h1, h2)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(2, $elements->length);
+		self::assertEquals("h1", $elements->item(0)->getAttribute("id"));
+		self::assertEquals("h2", $elements->item(1)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorSupportsRelativeSelectorLists() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_RELATIVE_SELECTOR_LIST);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("section:has(> h1, > h2)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(2, $elements->length);
+		self::assertEquals("h1", $elements->item(0)->getAttribute("id"));
+		self::assertEquals("h2", $elements->item(1)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorSupportsNestedNotCondition() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_NESTED_NOT);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("ul:has(:not(.selected))");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertEquals("has-unselected", $elements->item(0)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorSupportsLeadingSiblingWithPseudoCondition() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_HAS_LEADING_SIBLING_WITH_PSEUDO);
+		$xpath = new DOMXPath($document);
+
+		$translator = new Translator("label:has(+ input:checked)");
+		$elements = $xpath->query($translator);
+
+		self::assertEquals(1, $elements->length);
+		self::assertEquals("checked", $elements->item(0)->getAttribute("id"));
+	}
+
+	public function testHasPseudoSelectorWithEmptySpecifierIsIgnored() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(Helper::HTML_COMPLEX);
+		$xpath = new DOMXPath($document);
+
+		$allDivs = new Translator("div");
+		$hasEmpty = new Translator("div:has()");
+
+		self::assertEquals(
+			$xpath->query($allDivs)->length,
+			$xpath->query($hasEmpty)->length
+		);
+	}
+
+	public function testNestedHasPseudoSelectorThrowsNotYetImplementedException() {
+		$this->expectException(NotYetImplementedException::class);
+		$this->expectExceptionMessage("Nested :has selector functionality is deferred");
+
+		$translator = new Translator("div:has(:has(span))");
+		$translator->asXPath();
+	}
+
+	public function testHasPseudoSelectorPseudoElementArgumentThrowsNotYetImplementedException() {
+		$this->expectException(NotYetImplementedException::class);
+		$this->expectExceptionMessage("Pseudo-element :has selector functionality is deferred");
+
+		$translator = new Translator("div:has(::before)");
+		$translator->asXPath();
+	}
+
+	public function testHasPseudoSelectorNthChildOfSyntaxThrowsNotYetImplementedException() {
+		$this->expectException(NotYetImplementedException::class);
+		$this->expectExceptionMessage("':nth-child(of S)' in :has selector functionality is deferred");
+
+		$translator = new Translator("ul:has(:nth-child(2 of .selected))");
+		$translator->asXPath();
 	}
 
 	public function testCommaSeparatedSelectors() {

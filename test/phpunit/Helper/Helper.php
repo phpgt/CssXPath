@@ -179,4 +179,109 @@ HTML;
 </body>
 </html>
 HTML;
+
+	const HTML_HAS_CHILD_SECTION = <<<HTML
+<!doctype html>
+<main>
+	<section id="direct">
+		<h2>Direct heading</h2>
+	</section>
+	<section id="nested">
+		<div><h2>Nested heading</h2></div>
+	</section>
+</main>
+HTML;
+
+	const HTML_HAS_ADJACENT_SIBLING = <<<HTML
+<!doctype html>
+<main>
+	<h1 id="pass">Pass</h1>
+	<p>Next is paragraph</p>
+	<h1 id="fail">Fail</h1>
+	<div>Next is div</div>
+</main>
+HTML;
+
+	const HTML_HAS_GENERAL_SIBLING = <<<HTML
+<!doctype html>
+<main>
+	<h2 id="pass">Pass</h2>
+	<div>intermediate</div>
+	<p class="warning">warning</p>
+	<h2 id="fail">Fail</h2>
+	<div>no warning sibling</div>
+</main>
+HTML;
+
+	const HTML_HAS_SELECTOR_LIST = <<<HTML
+<!doctype html>
+<main>
+	<section id="h1"><h1>One</h1></section>
+	<section id="h2"><h2>Two</h2></section>
+	<section id="none"><p>None</p></section>
+</main>
+HTML;
+
+	const HTML_HAS_RELATIVE_SELECTOR_LIST = <<<HTML
+<!doctype html>
+<main>
+	<section id="h1"><h1>One</h1></section>
+	<section id="h2"><h2>Two</h2></section>
+	<section id="nested"><div><h2>Two nested</h2></div></section>
+</main>
+HTML;
+
+	const HTML_HAS_NESTED_NOT = <<<HTML
+<!doctype html>
+<main>
+	<ul id="all-selected">
+		<li class="selected">A</li>
+		<li class="selected">B</li>
+	</ul>
+	<ul id="has-unselected">
+		<li class="selected">C</li>
+		<li>D</li>
+	</ul>
+</main>
+HTML;
+
+	const HTML_HAS_LEADING_SIBLING_WITH_PSEUDO = <<<HTML
+<!doctype html>
+<form>
+	<label id="checked">Checked sibling</label>
+	<input type="checkbox" checked />
+	<label id="unchecked">Unchecked sibling</label>
+	<input type="checkbox" />
+</form>
+HTML;
+
+	const HTML_DEFINITION_LIST = <<<HTML
+<!doctype html>
+<dl>
+	<dt>gigogne</dt>
+	<dd>
+	<dl>
+		<dt>fusee</dt>
+		<dd>multistage rocket</dd>
+		<dt>table</dt>
+		<dd>nest of tables</dd>
+	</dl>
+	</dd>
+</dl>
+HTML;
+
+	const HTML_ATHLETE_LIST = <<<HTML
+<!doctype html>
+<div><p>Track & field champions:</p>
+<ul>
+  <li>Adhemar da Silva</li>
+  <li>Wang Junxia</li>
+  <li>Wilma Rudolph</li>
+  <li>Babe Didrikson-Zaharias</li>
+  <li>Betty Cuthbert</li>
+  <li>Fanny Blankers-Koen</li>
+  <li>Florence Griffith-Joyner</li>
+</ul></div>
+HTML;
+
 }
