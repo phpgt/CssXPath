@@ -21,7 +21,10 @@ class TranslatorTest extends TestCase {
 
 		$starSelector = new Translator("*");
 		$allStarNodeList = $xpath->query($starSelector, $document);
-		$bodyStarNodeList = $xpath->query($starSelector, $document->getElementsByTagName("body")->item(0));
+			$bodyStarNodeList = $xpath->query(
+				$starSelector,
+				$document->getElementsByTagName("body")->item(0)
+			);
 
 		$expectedNodeNames = [
 			"outer" => ["html", "head", "meta", "title", "body"],
@@ -204,12 +207,13 @@ class TranslatorTest extends TestCase {
 	}
 
 	public function testSibling() {
-// Note: "+" is the adjacent sibling selector - only matching elements that come immediately after
-// another. The "~" operator is general sibling selector.
+		// Note: "+" is the adjacent sibling selector - only matching
+		// elements that come immediately after another. The "~" operator
+		// is general sibling selector.
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_COMPLEX);
-// In this selector example, we should be selecting the first div after the header
-// (appearing in the body>main>article element)
+		// In this selector example, we should be selecting the first div
+		// after the header (appearing in the body>main>article element).
 		$inputSiblingSelector = new Translator("header + div");
 		$inputSiblingSelectorNoWs = new Translator("header+div");
 
@@ -234,13 +238,16 @@ class TranslatorTest extends TestCase {
 		$elements = $xpath->query($translator);
 
 		self::assertEquals(2, $elements->length);
-		self::assertEquals(".//main//header/following-sibling::div", (string)$translator);
+			self::assertEquals(
+				".//main//header/following-sibling::div",
+				(string)$translator
+			);
 
 		$detailsOnly = new Translator("main header ~ div.details");
 		self::assertEquals(1, $xpath->query($detailsOnly)->length);
 	}
 
-	public function testSubsequentSibling_spaces() {
+	public function testSubsequentSiblingSpaces():void {
 		$translator1 = new Translator("main header ~ div");
 		$translator2 = new Translator("main header~div");
 		$translator3 = new Translator("main header ~div");
@@ -455,7 +462,10 @@ class TranslatorTest extends TestCase {
 
 	public function testAttributeEqualsOrStartsWithHypehnatedSelector() {
 		$document = new DOMDocument("1.0", "UTF-8");
-		$document->loadHTML("<div class='en'></div><div class='en-'></div><div class='en-uk'></div><div class='es'></div>");
+			$document->loadHTML(
+				"<div class='en'></div><div class='en-'></div>"
+				. "<div class='en-uk'></div><div class='es'></div>"
+			);
 		$xpath = new DOMXPath($document);
 
 		$selector = new Translator("[class|=en]");
@@ -467,7 +477,10 @@ class TranslatorTest extends TestCase {
 
 	public function testAttributeStartsWithSelector() {
 		$document = new DOMDocument("1.0", "UTF-8");
-		$document->loadHTML("<div class='class1'></div><div class='foo class1'></div><div class='class1 class2'></div><div class='class2'></div>");
+			$document->loadHTML(
+				"<div class='class1'></div><div class='foo class1'></div>"
+				. "<div class='class1 class2'></div><div class='class2'></div>"
+			);
 		$xpath = new DOMXPath($document);
 
 		$selector = new Translator("[class^=class1]");
@@ -531,7 +544,10 @@ class TranslatorTest extends TestCase {
 		self::assertEquals("em", $em->tagName);
 
 		$allElements = $xpath->query($allTranslator);
-		$allElementsInBody = $xpath->query($allTranslator, $document->getElementsByTagName("body")->item(0));
+			$allElementsInBody = $xpath->query(
+				$allTranslator,
+				$document->getElementsByTagName("body")->item(0)
+			);
 
 		self::assertEquals(
 			3, // h1, p, em (not body, as body is the referenceNode)
@@ -748,10 +764,14 @@ class TranslatorTest extends TestCase {
 		$elements = $xpath->query($translator);
 
 		self::assertEquals(1, $elements->length);
-		self::assertEquals("has-unselected", $elements->item(0)->getAttribute("id"));
+			self::assertEquals(
+				"has-unselected",
+				$elements->item(0)->getAttribute("id")
+			);
 	}
 
-	public function testHasPseudoSelectorSupportsLeadingSiblingWithPseudoCondition() {
+	public function testHasPseudoSelectorSupportsLeadingSiblingWithPseudoCondition(
+	):void {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_HAS_LEADING_SIBLING_WITH_PSEUDO);
 		$xpath = new DOMXPath($document);
@@ -760,7 +780,10 @@ class TranslatorTest extends TestCase {
 		$elements = $xpath->query($translator);
 
 		self::assertEquals(1, $elements->length);
-		self::assertEquals("checked", $elements->item(0)->getAttribute("id"));
+			self::assertEquals(
+				"checked",
+				$elements->item(0)->getAttribute("id")
+			);
 	}
 
 	public function testHasPseudoSelectorWithEmptySpecifierIsIgnored() {
@@ -779,31 +802,40 @@ class TranslatorTest extends TestCase {
 
 	public function testNestedHasPseudoSelectorThrowsNotYetImplementedException() {
 		$this->expectException(NotYetImplementedException::class);
-		$this->expectExceptionMessage("Nested :has selector functionality is deferred");
+		$this->expectExceptionMessage(
+			"Nested :has selector functionality is deferred"
+		);
 
 		$translator = new Translator("div:has(:has(span))");
 		$translator->asXPath();
 	}
 
-	public function testHasPseudoSelectorPseudoElementArgumentThrowsNotYetImplementedException() {
+	public function testHasPseudoSelectorPseudoElementThrowsDeferredException(
+	):void {
 		$this->expectException(NotYetImplementedException::class);
-		$this->expectExceptionMessage("Pseudo-element :has selector functionality is deferred");
+		$this->expectExceptionMessage(
+			"Pseudo-element :has selector functionality is deferred"
+		);
 
 		$translator = new Translator("div:has(::before)");
 		$translator->asXPath();
 	}
 
-	public function testHasPseudoSelectorNthChildOfSyntaxThrowsNotYetImplementedException() {
+	public function testHasPseudoSelectorNthChildOfSyntaxThrowsDeferredException(
+	):void {
 		$this->expectException(NotYetImplementedException::class);
-		$this->expectExceptionMessage("':nth-child(of S)' in :has selector functionality is deferred");
+		$this->expectExceptionMessage(
+			"':nth-child(of S)' in :has selector functionality is deferred"
+		);
 
 		$translator = new Translator("ul:has(:nth-child(2 of .selected))");
 		$translator->asXPath();
 	}
 
 	public function testCommaSeparatedSelectors() {
-// Multiple XPath selectors are separated by a pipe (|), so the CSS selector
-// `div, form` should translate to descendant-or-self::div | descendant-or-self::form`
+		// Multiple XPath selectors are separated by a pipe (|), so the
+		// CSS selector `div, form` should translate to
+		// descendant-or-self::div | descendant-or-self::form.
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_SIMPLE);
 		$xpath = new DOMXPath($document);
@@ -827,7 +859,9 @@ class TranslatorTest extends TestCase {
 		$xpath = new DOMXPath($document);
 
 		$emailTranslator = new Translator("[name=email]");
-		$messageTranslator = new Translator("[data-ga-client='(Test) Message, this has a comma']");
+			$messageTranslator = new Translator(
+				"[data-ga-client='(Test) Message, this has a comma']"
+			);
 
 		$emailItems = $xpath->query($emailTranslator);
 		$messageItems = $xpath->query($messageTranslator);
