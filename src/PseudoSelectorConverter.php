@@ -7,15 +7,18 @@ class PseudoSelectorConverter {
 	private const BOOLEAN_ATTRIBUTES = ["disabled", "checked", "selected"];
 	private SelectorListSplitter $selectorListSplitter;
 	private NotSelectorConditionBuilder $notSelectorConditionBuilder;
+	private ?HasSelectorConditionBuilder $hasSelectorConditionBuilder;
 
 	public function __construct(
 		?SelectorListSplitter $selectorListSplitter = null,
 		?NotSelectorConditionBuilder $notSelectorConditionBuilder = null,
+		?HasSelectorConditionBuilder $hasSelectorConditionBuilder = null,
 	) {
 		$this->selectorListSplitter = $selectorListSplitter
 			?? new SelectorListSplitter();
 		$this->notSelectorConditionBuilder = $notSelectorConditionBuilder
 			?? new NotSelectorConditionBuilder();
+		$this->hasSelectorConditionBuilder = $hasSelectorConditionBuilder;
 	}
 
 	/**
@@ -40,6 +43,7 @@ class PseudoSelectorConverter {
 			"text" => fn() => $this->applyText($expression),
 			"contains" => fn() => $this->applyContains($expression, $specifier),
 			"not" => fn() => $this->applyNot($expression, $specifier, $htmlMode),
+			"has" => fn() => $this->applyHas($expression, $specifier, $htmlMode),
 			"first-child" => fn() => $expression->prependToLast("*[1]/self::"),
 			"nth-child" => fn() => $this->applyNthChild($expression, $specifier),
 			"last-child" => fn() => $expression->prependToLast("*[last()]/self::"),
@@ -123,6 +127,26 @@ class PseudoSelectorConverter {
 			: "(" . implode(" or ", $conditions) . ")";
 		$expression->ensureElement();
 		$expression->appendFragment("[not({$combined})]");
+	}
+
+	private function applyHas(
+		XPathExpression $expression,
+		string $specifier,
+		bool $htmlMode
+	):void {
+		$condition = $this->getHasSelectorConditionBuilder()
+			->build($specifier, $htmlMode);
+		if($condition === null) {
+			return;
+		}
+
+		$expression->ensureElement();
+		$expression->appendFragment("[{$condition}]");
+	}
+
+	private function getHasSelectorConditionBuilder():HasSelectorConditionBuilder {
+		return $this->hasSelectorConditionBuilder
+			??= new HasSelectorConditionBuilder();
 	}
 
 	/** @param array<string, mixed>|null $next */

@@ -25,7 +25,7 @@ class ComponentConverterTest extends TestCase {
 		self::assertSame("'email'", $thread[0]["detail"][1]["content"]);
 	}
 
-	public function testThreadMatcherUsesTransformForPrimaryAndDetailMatches():void {
+	public function testThreadMatcherUsesTransformForMatches():void {
 		$matcher = new ThreadMatcher();
 		$thread = array_values(
 			$matcher->collate(
@@ -49,35 +49,38 @@ class ComponentConverterTest extends TestCase {
 		$expression = new XPathExpression(".//");
 		$expression->appendElement("p", true);
 
-			$converter->apply(
-				["type" => "pseudo", "content" => "contains"],
-				null,
-				$expression,
-				true
-			);
+		$converter->apply(
+			["type" => "pseudo", "content" => "contains"],
+			null,
+			$expression,
+			true
+		);
 		self::assertSame(".//p", $expression->toString());
 
-			$converter->apply(
-				["type" => "pseudo", "content" => "contains"],
-				["type" => "pseudospecifier", "content" => "'Example'"],
-				$expression,
-				true
-			);
-		self::assertSame(".//p[contains(text(),'Example')]", $expression->toString());
+		$converter->apply(
+			["type" => "pseudo", "content" => "contains"],
+			["type" => "pseudospecifier", "content" => "'Example'"],
+			$expression,
+			true
+		);
+		self::assertSame(
+			".//p[contains(text(),'Example')]",
+			$expression->toString(),
+		);
 	}
 
-	public function testPseudoSelectorConverterNthChildCanRefineExistingPredicate():void {
+	public function testPseudoSelectorConverterNthChildRefinesPredicate():void {
 		$converter = new PseudoSelectorConverter();
 		$expression = new XPathExpression(".//");
 		$expression->appendElement("li", true);
 		$expression->appendFragment("[contains(@class,\"selected\")]");
 
-			$converter->apply(
-				["type" => "pseudo", "content" => "nth-child"],
-				["type" => "pseudospecifier", "content" => "2"],
-				$expression,
-				true
-			);
+		$converter->apply(
+			["type" => "pseudo", "content" => "nth-child"],
+			["type" => "pseudospecifier", "content" => "2"],
+			$expression,
+			true
+		);
 
 		self::assertSame(
 			".//li[contains(@class,\"selected\") and position() = 2]",
@@ -85,7 +88,7 @@ class ComponentConverterTest extends TestCase {
 		);
 	}
 
-	public function testAttributeSelectorConverterHonoursHtmlModeCaseSensitivity():void {
+	public function testAttributeSelectorConverterHonoursHtmlMode():void {
 		$converter = new AttributeSelectorConverter();
 
 		$htmlExpression = new XPathExpression(".//");
@@ -105,7 +108,7 @@ class ComponentConverterTest extends TestCase {
 		self::assertSame("//*[@DATA-FOO]", $xmlExpression->toString());
 	}
 
-	public function testAttributeSelectorConverterBuildsHyphenatedPrefixExpression():void {
+	public function testAttributeSelectorConverterBuildsHyphenatedPrefix():void {
 		$converter = new AttributeSelectorConverter();
 		$expression = new XPathExpression(".//");
 
@@ -128,7 +131,7 @@ class ComponentConverterTest extends TestCase {
 		);
 	}
 
-	public function testPseudoSelectorConverterNotBuildsElementAndClassCondition():void {
+	public function testPseudoSelectorConverterNotBuildsCondition():void {
 		$converter = new PseudoSelectorConverter();
 		$expression = new XPathExpression(".//");
 		$expression->appendElement("li", true);
@@ -153,18 +156,22 @@ class ComponentConverterTest extends TestCase {
 
 		$converter->apply(
 			["type" => "pseudo", "content" => "not"],
-			["type" => "pseudospecifier", "content" => ".selected, [data-state='hidden']"],
+			[
+				"type" => "pseudospecifier",
+				"content" => ".selected, [data-state='hidden']",
+			],
 			$expression,
 			true
 		);
 
 		self::assertSame(
-			".//li[not((contains(concat(' ',normalize-space(@class),' '),' selected ') or @data-state=\"hidden\"))]",
+			".//li[not((contains(concat(' ',normalize-space(@class),' '),' selected ')"
+			. " or @data-state=\"hidden\"))]",
 			$expression->toString()
 		);
 	}
 
-	public function testPseudoSelectorConverterNotIgnoresUnsupportedComplexSelector():void {
+	public function testPseudoSelectorConverterNotIgnoresComplexSelector():void {
 		$converter = new PseudoSelectorConverter();
 		$expression = new XPathExpression(".//");
 		$expression->appendElement("li", true);
@@ -178,7 +185,56 @@ class ComponentConverterTest extends TestCase {
 
 		self::assertSame(".//li", $expression->toString());
 	}
-	public function testSingleSelectorConverterHandlesWildcardClassAndIdSelectors():void {
+
+	public function testPseudoSelectorConverterHasBuildsDescendant():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "h1"],
+			$expression,
+			true
+		);
+
+		self::assertSame(".//section[.//h1]", $expression->toString());
+	}
+
+	public function testPseudoSelectorConverterHasBuildsChildCondition():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "> h1"],
+			$expression,
+			true
+		);
+
+		self::assertSame(".//section[./h1]", $expression->toString());
+	}
+
+	public function testPseudoSelectorConverterHasCombinesSelectors():void {
+		$converter = new PseudoSelectorConverter();
+		$expression = new XPathExpression(".//");
+		$expression->appendElement("section", true);
+
+		$converter->apply(
+			["type" => "pseudo", "content" => "has"],
+			["type" => "pseudospecifier", "content" => "h1, h2"],
+			$expression,
+			true
+		);
+
+		self::assertSame(
+			".//section[(.//h1) or (.//h2)]",
+			$expression->toString()
+		);
+	}
+
+	public function testSingleSelectorConverterHandlesWildcardSelectors():void {
 		$converter = new SingleSelectorConverter();
 
 		self::assertSame(
@@ -200,7 +256,7 @@ class ComponentConverterTest extends TestCase {
 		);
 	}
 
-	public function testXPathExpressionMarksAxisTransitionsBeforeEnsuringElement():void {
+	public function testXpathExpressionEnsuresElementAfterAxisTransition():void {
 		$expression = new XPathExpression(".//");
 		$expression->appendElement("main", true);
 		$expression->appendFragment("/");
