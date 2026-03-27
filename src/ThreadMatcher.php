@@ -3,12 +3,25 @@
 namespace Gt\CssXPath;
 
 class ThreadMatcher {
+	private CssSelectorLexer $cssSelectorLexer;
+
+	public function __construct(
+		?CssSelectorLexer $cssSelectorLexer = null
+	) {
+		$this->cssSelectorLexer = $cssSelectorLexer
+			?? new CssSelectorLexer();
+	}
+
 	/** @return array<int, array<string, mixed>> */
 	public function collate(
 		string $regex,
 		string $string,
 		?callable $transform = null
 	):array {
+		if($regex === Translator::CSS_REGEX) {
+			return $this->collateCssSelector($string, $transform);
+		}
+
 		preg_match_all(
 			$regex,
 			$string,
@@ -27,6 +40,14 @@ class ThreadMatcher {
 		}
 
 		return $set;
+	}
+
+	/** @return array<int, array<string, mixed>> */
+	private function collateCssSelector(
+		string $selector,
+		?callable $transform
+	):array {
+		return $this->cssSelectorLexer->lex($selector, $transform);
 	}
 
 	/**
