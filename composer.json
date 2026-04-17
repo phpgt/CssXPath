@@ -31,7 +31,6 @@
 
 	"scripts": {
 		"phpunit": "XDEBUG_MODE=coverage vendor/bin/phpunit --configuration phpunit.xml",
-		"phpunit:coverage": "XDEBUG_MODE=coverage vendor/bin/phpunit --configuration phpunit.xml --coverage-text",
 		"phpstan": "vendor/bin/phpstan analyse --level 6 src",
 		"test": [
 			"@phpunit",
