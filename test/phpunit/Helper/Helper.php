@@ -1,5 +1,5 @@
 <?php
-namespace Gt\CssXPath\Test\Helper;
+namespace GT\CssXPath\Test\Helper;
 
 class Helper {
 	const HTML_SIMPLE = <<<HTML

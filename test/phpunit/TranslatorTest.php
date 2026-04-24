@@ -1,13 +1,13 @@
 <?php
 
-namespace Gt\CssXPath\Test;
+namespace GT\CssXPath\Test;
 
 use DOMDocument;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
-use Gt\CssXPath\NotYetImplementedException;
-use Gt\CssXPath\Test\Helper\Helper;
-use Gt\CssXPath\Translator;
+use GT\CssXPath\NotYetImplementedException;
+use GT\CssXPath\Test\Helper\Helper;
+use GT\CssXPath\Translator;
 
 class TranslatorTest extends TestCase {
 	protected function setUp():void {
