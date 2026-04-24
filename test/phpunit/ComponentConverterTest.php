@@ -1,13 +1,13 @@
 <?php
 
-namespace Gt\CssXPath\Test;
+namespace GT\CssXPath\Test;
 
-use Gt\CssXPath\AttributeSelectorConverter;
-use Gt\CssXPath\PseudoSelectorConverter;
-use Gt\CssXPath\SingleSelectorConverter;
-use Gt\CssXPath\ThreadMatcher;
-use Gt\CssXPath\Translator;
-use Gt\CssXPath\XPathExpression;
+use GT\CssXPath\AttributeSelectorConverter;
+use GT\CssXPath\PseudoSelectorConverter;
+use GT\CssXPath\SingleSelectorConverter;
+use GT\CssXPath\ThreadMatcher;
+use GT\CssXPath\Translator;
+use GT\CssXPath\XPathExpression;
 use PHPUnit\Framework\TestCase;
 
 class ComponentConverterTest extends TestCase {

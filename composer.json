@@ -20,11 +20,13 @@
 
 	"autoload": {
 		"psr-4": {
+			"GT\\CssXPath\\": "./src",
 			"Gt\\CssXPath\\": "./src"
 		}
 	},
 	"autoload-dev": {
 		"psr-4": {
+			"GT\\CssXPath\\Test\\": "./test/phpunit",
 			"Gt\\CssXPath\\Test\\": "./test/phpunit"
 		}
 	},
