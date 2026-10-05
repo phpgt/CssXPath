@@ -26,8 +26,7 @@
 	},
 	"autoload-dev": {
 		"psr-4": {
-			"GT\\CssXPath\\Test\\": "./test/phpunit",
-			"Gt\\CssXPath\\Test\\": "./test/phpunit"
+			"GT\\CssXPath\\Test\\": "./test/phpunit"
 		}
 	},
 
