@@ -392,6 +392,59 @@ class TranslatorTest extends TestCase {
 
 	}
 
+	public function testAttributeCaseFlag() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(
+			"<div data-rel='ICON'></div>"
+			. "<div data-rel='shortcut icon'></div>"
+		);
+		$xpath = new DOMXPath($document);
+
+		$wordMatchCaseSensitive = new Translator("[data-rel~='icon']");
+		self::assertEquals(1, $xpath->query($wordMatchCaseSensitive)->length);
+
+		$wordMatchCaseFlagI = new Translator("[data-rel~='icon' i]");
+		self::assertEquals(2, $xpath->query($wordMatchCaseFlagI)->length);
+
+		$exactMatchCaseFlagI = new Translator("[data-rel='icon' i]");
+		self::assertEquals(1, $xpath->query($exactMatchCaseFlagI)->length);
+
+		$exactMatchUppercaseValueCaseFlagI = new Translator("[data-rel='ICON' i]");
+		self::assertEquals(1, $xpath->query($exactMatchUppercaseValueCaseFlagI)->length);
+
+		$exactMatchExplicitlyCaseSensitive = new Translator("[data-rel='icon' s]");
+		self::assertEquals(0, $xpath->query($exactMatchExplicitlyCaseSensitive)->length);
+
+		$exactMatchUppercaseFlagLetter = new Translator("[data-rel~='icon' I]");
+		self::assertEquals(2, $xpath->query($exactMatchUppercaseFlagLetter)->length);
+
+		$unquotedValueCaseFlagI = new Translator("[data-rel~=icon i]");
+		self::assertEquals(2, $xpath->query($unquotedValueCaseFlagI)->length);
+
+		$notSelectorCaseFlagI = new Translator(
+			"[data-rel~='icon' i]:not([data-rel='ICON' i])"
+		);
+		self::assertEquals(1, $xpath->query($notSelectorCaseFlagI)->length);
+
+		$xmlDocument = new DOMDocument("1.0", "UTF-8");
+		$xmlDocument->loadXML('<div data-FOO="bar">baz</div>');
+		$xmlXpath = new DOMXPath($xmlDocument);
+
+		$xmlCaseFlagInsensitive = new Translator(
+			"[data-FOO='BAR' i]",
+			prefix: '//',
+			htmlMode: false
+		);
+		self::assertEquals(1, $xmlXpath->query($xmlCaseFlagInsensitive)->length);
+
+		$xmlExplicitlyCaseSensitive = new Translator(
+			"[data-FOO='bar' s]",
+			prefix: '//',
+			htmlMode: false
+		);
+		self::assertEquals(1, $xmlXpath->query($xmlExplicitlyCaseSensitive)->length);
+	}
+
 	public function testAttributeStarSelector() {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_COMPLEX);
