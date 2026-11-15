@@ -28,7 +28,9 @@ class AttributeSelectorConverter {
 			return;
 		}
 
-		[$valueString, $flag] = $this->extractValueAndFlag((string)$detailValue["content"]);
+		[$valueString, $flag] = $this->extractValueAndFlag(
+			(string)$detailValue["content"]
+		);
 		$equalsType = $detailType["content"];
 		$expression->appendFragment(
 			$this->buildExpression($attribute, $valueString, $equalsType, $flag)
@@ -58,7 +60,9 @@ class AttributeSelectorConverter {
 			return "@{$attribute}";
 		}
 
-		[$valueString, $flag] = $this->extractValueAndFlag((string)$detailValue["content"]);
+		[$valueString, $flag] = $this->extractValueAndFlag(
+			(string)$detailValue["content"]
+		);
 		$equalsType = $detailType["content"];
 		$condition = $this->buildCondition($attribute, $valueString, $equalsType);
 		return $this->applyCaseFlag($condition, $attribute, $flag);
@@ -143,7 +147,8 @@ class AttributeSelectorConverter {
 	 *   flag, or null if there is no case flag
 	 */
 	private function extractValueAndFlag(string $rawValue):array {
-		$patternQuoted = '/^(?<quote>[\'"])(?<value>.*)(?P=quote)\s*(?<flag>[is])\s*$/i';
+		$patternQuoted = "/^(?<quote>['\"])(?<value>.*)(?P=quote)\s*"
+			. "(?<flag>[is])\s*$/i";
 		$patternUnquoted = '/^(?<value>.+\S)\s+(?<flag>[is])\s*$/i';
 
 		if(preg_match($patternQuoted, $rawValue, $matches) === 1
