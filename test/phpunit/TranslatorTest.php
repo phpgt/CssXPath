@@ -448,6 +448,37 @@ class TranslatorTest extends TestCase {
 		}
 	}
 
+	public function testAttributeCaseFlagMissingAttribute() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(<<<'HTML'
+			<div data-x="a"></div>
+			<div data-x=""></div>
+			<div></div>
+			HTML);
+		$xpath = new DOMXPath($document);
+
+		foreach([
+			"[data-x='']" => 1,
+			"[data-x='' i]" => 1,
+			"[data-x='' s]" => 1,
+			"[data-x='a' i]" => 1,
+		] as $selector => $expectedCount) {
+			self::assertEquals(
+				$expectedCount,
+				$xpath->query(new Translator($selector))->length,
+				$selector
+			);
+		}
+
+		$notSelectorEmptyValue = new Translator("div:not([data-x='' i])");
+		self::assertEquals(2, $xpath->query($notSelectorEmptyValue)->length);
+
+		$notSelectorWithinCondition = new Translator(
+			"div[data-x='a' i]:not([data-x='' i])"
+		);
+		self::assertEquals(1, $xpath->query($notSelectorWithinCondition)->length);
+	}
+
 	public function testAttributeStarSelector() {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_COMPLEX);
