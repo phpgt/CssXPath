@@ -392,6 +392,93 @@ class TranslatorTest extends TestCase {
 
 	}
 
+	public function testAttributeCaseFlag() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(<<<'HTML'
+			<div data-rel="ICON"></div>
+			<div data-rel="shortcut icon"></div>
+			<div data-x="@data-x"></div>
+			<div data-x="A"></div>
+			<div data-url="PHOTO.SVG"></div>
+			HTML);
+		$xpath = new DOMXPath($document);
+
+		foreach([
+			"[data-rel~='icon']" => 1,
+			"[data-rel~='icon' i]" => 2,
+			"[data-rel='icon' i]" => 1,
+			"[data-rel='ICON' i]" => 1,
+			"[data-rel='icon' s]" => 0,
+			"[data-rel~='icon' I]" => 2,
+			"[data-rel~=icon i]" => 2,
+			"[data-x='@data-x' i]" => 1,
+			"[data-x='@DATA-X' i]" => 1,
+			"[data-x=A i]" => 1,
+			"[data-x=a s]" => 0,
+			"[data-url$='.svg' i]" => 1,
+			"[data-url$='.svg' s]" => 0,
+		] as $selector => $expectedCount) {
+			self::assertEquals(
+				$expectedCount,
+				$xpath->query(new Translator($selector))->length,
+				$selector
+			);
+		}
+
+		$notSelectorCaseFlagI = new Translator(
+			"[data-rel~='icon' i]:not([data-rel='ICON' i])"
+		);
+		self::assertEquals(1, $xpath->query($notSelectorCaseFlagI)->length);
+
+		$xmlDocument = new DOMDocument("1.0", "UTF-8");
+		$xmlDocument->loadXML('<div data-FOO="bar">baz</div>');
+		$xmlXpath = new DOMXPath($xmlDocument);
+
+		foreach([
+			"[data-FOO='BAR' i]" => 1,
+			"[data-FOO='bar' s]" => 1,
+		] as $selector => $expectedCount) {
+			self::assertEquals(
+				$expectedCount,
+				$xmlXpath->query(
+					new Translator($selector, prefix: '//', htmlMode: false)
+				)->length,
+				$selector
+			);
+		}
+	}
+
+	public function testAttributeCaseFlagMissingAttribute() {
+		$document = new DOMDocument("1.0", "UTF-8");
+		$document->loadHTML(<<<'HTML'
+			<div data-x="a"></div>
+			<div data-x=""></div>
+			<div></div>
+			HTML);
+		$xpath = new DOMXPath($document);
+
+		foreach([
+			"[data-x='']" => 1,
+			"[data-x='' i]" => 1,
+			"[data-x='' s]" => 1,
+			"[data-x='a' i]" => 1,
+		] as $selector => $expectedCount) {
+			self::assertEquals(
+				$expectedCount,
+				$xpath->query(new Translator($selector))->length,
+				$selector
+			);
+		}
+
+		$notSelectorEmptyValue = new Translator("div:not([data-x='' i])");
+		self::assertEquals(2, $xpath->query($notSelectorEmptyValue)->length);
+
+		$notSelectorWithinCondition = new Translator(
+			"div[data-x='a' i]:not([data-x='' i])"
+		);
+		self::assertEquals(1, $xpath->query($notSelectorWithinCondition)->length);
+	}
+
 	public function testAttributeStarSelector() {
 		$document = new DOMDocument("1.0", "UTF-8");
 		$document->loadHTML(Helper::HTML_COMPLEX);
